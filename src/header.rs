@@ -1,4 +1,4 @@
-pub fn generate(body_len: u16, comment: &str) -> Vec<u8> {
+pub fn generate_header(body_len: u16, comment: &str) -> Vec<u8> {
     // https://gist.github.com/SimonEast/244a0fd04526ea1acbec2e2ceb2e7924
     let mut header = Vec::with_capacity(55);
 
