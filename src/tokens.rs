@@ -54,16 +54,41 @@ fn parse_token_id(token_id_str: &str) -> Option<u8> {
         .and_then(|x| u8::from_str_radix(x, 16).ok())
 }
 
+#[derive(Debug, Clone)]
+enum TokenTextError {
+    NoLanguages,
+    NoEnglish,
+}
+
+impl Error for TokenTextError {}
+
+impl Display for TokenTextError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
+            TokenTextError::NoLanguages => "No languages in token",
+            TokenTextError::NoEnglish => "No english language in token",
+        };
+        write!(f, "{text}")
+    }
+}
+
 // finds the typeable text of a token. Because these were different across
 // different versions of TI, there could be multiple entries for the same token.
 // We just take the latest one.
-fn token_text(tokens: Vec<Token>) -> Option<String> {
-    Some(tokens.last()?.langs.get("en")?.accessible.clone())
+fn token_text(tokens: Vec<Token>) -> Result<String, TokenTextError> {
+    Ok(tokens
+        .last()
+        .ok_or(TokenTextError::NoLanguages)?
+        .langs
+        .get("en")
+        .ok_or(TokenTextError::NoEnglish)?
+        .accessible
+        .clone())
 }
 
-fn add_token(tokens: Vec<Token>, token_id: Vec<u8>, root: &mut TokenTree) -> Option<()> {
+fn add_token(tokens: Vec<Token>, token_id: Vec<u8>, root: &mut TokenTree) -> Result<(), TokenTextError> {
     root.add(token_text(tokens)?, token_id);
-    Some(())
+    Ok(())
 }
 
 pub fn load_tokens() -> Result<TokenTree, Box<dyn Error>> {
@@ -75,7 +100,7 @@ pub fn load_tokens() -> Result<TokenTree, Box<dyn Error>> {
         let root_token_id = parse_token_id(&token.0).ok_or(InvalidTokenIdStr(token.0))?;
         match token.1 {
             TokenGroup::OneByte(tokens) => {
-                add_token(tokens, vec![root_token_id], &mut root);
+                add_token(tokens, vec![root_token_id], &mut root)?;
             }
             TokenGroup::TwoByte(token_list) => {
                 for (second_token_id, tokens) in token_list {
@@ -87,7 +112,7 @@ pub fn load_tokens() -> Result<TokenTree, Box<dyn Error>> {
                                 .ok_or(InvalidTokenIdStr(second_token_id))?,
                         ],
                         &mut root,
-                    );
+                    )?;
                 }
             }
         }

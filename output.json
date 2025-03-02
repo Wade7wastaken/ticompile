@@ -1,0 +1,253 @@
+{
+	"name": "Choose an Option",
+	"contents": [
+		{
+			"name": "Algebra",
+			"contents": [
+				{
+					"name": "Perfect square trinomial",
+					"lines": [
+						"(a+b)^^2=a^^2+2ab+b^^2",
+						"a^^2+b^^2=(a+b)^^2-2ab"
+					]
+				},
+				{
+					"name": "Difference of squares",
+					"lines": ["(a+b)(a-b)=a^^2+b^^2"]
+				},
+				{
+					"name": "Sum/difference of cubes",
+					"lines": ["a^^3+-b^^3=(a+-b)(a^^2-+ab+b^^2)"]
+				},
+				{
+					"name": "Binomial theorem",
+					"lines": [
+						"kth term of (x+y)^n",
+						"Start at k=0",
+						"nCk*x^(n-k)*y^k"
+					]
+				},
+				{
+					"name": "Fractional exponents",
+					"lines": ["a^(p/q)=qth root of a^p"]
+				},
+				{
+					"name": "Sequences",
+					"contents": [
+						{
+							"name": "Arithmetic",
+							"contents": [
+								{
+									"name": "Definition",
+									"lines": [
+										"Sequence of numbers that",
+										"starts at a1 and increases",
+										"by d every iteration"
+									]
+								},
+								{
+									"name": "General term",
+									"lines": ["1st term n=1", "Sn=S1+(n-1)d"]
+								},
+								{
+									"name": "Finite sum",
+									"lines": [
+										"a1: 1st term",
+										"an: last term",
+										"n: # terms",
+										"(n/2)(a1+an)"
+									]
+								}
+							]
+						},
+						{
+							"name": "Geometric",
+							"contents": [
+								{
+									"name": "General term",
+									"lines": ["Sn=S1r^(n-1)"]
+								},
+								{
+									"name": "Finite sum",
+									"lines": ["Sn=S1(1-r^n)/(1-r)"]
+								},
+								{
+									"name": "Infinite sum",
+									"lines": ["Sinf=S1/(1-r)"]
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Geometry",
+			"contents": [
+				{
+					"name": "Circle",
+					"contents": [
+						{
+							"name": "Definition",
+							"lines": [
+								"Points same dist from center",
+								"(x-h)^^2+(y-k^^2)=r^^2",
+								"k,h=center",
+								"r=radius"
+							]
+						},
+						{
+							"name": "Area",
+							"lines": ["A=pir^^2"]
+						},
+						{
+							"name": "Perimeter",
+							"lines": ["P=2pir"]
+						}
+					]
+				},
+				{
+					"name": "Triangle",
+					"contents": [
+						{
+							"name": "Area",
+							"lines": ["A=1/2Bh"]
+						},
+						{
+							"name": "Area equilateral",
+							"lines": ["A=s^^2sqrt(3)/4"]
+						},
+						{
+							"name": "Heron's form\\ula",
+							"lines": ["A=sqrt(S(S-x)(S-y)(S-z))", "S=(x+y+z)/2"]
+						},
+						{
+							"name": "Altitude scalene",
+							"lines": ["Use heron's for area", "H=2A/b"]
+						},
+						{
+							"name": "Altitude isosceles",
+							"lines": ["H=sqrt(a^^2-(b^^2/4))"]
+						},
+						{
+							"name": "Altitude equilateral",
+							"lines": ["H=asqrt(3)/2"]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Algebra 2",
+			"contents": [
+				{
+					"name": "Log conversion",
+					"lines": [
+						"log base b(a)=x",
+						"b^x=a",
+						"Only if x>0,b>0,b!=1"
+					]
+				},
+				{
+					"name": "Sum/prod of roots",
+					"lines": [
+						"Given polynomial",
+						"an^n+a(n-1)^(n-1)...+a0",
+						"Sum:  -a(n-1)/an",
+						"Prod: a0/an if n even",
+						"      -a0/an if n odd"
+					]
+				}
+			]
+		},
+		{
+			"name": "Trigonometry",
+			"contents": [
+				{
+					"name": "Trig Definitions",
+					"lines": [
+						"Circle: x^^2+y^^2=r^^2",
+						"sin=y/r  csc=r/y",
+						"cos=x/r  sec=r/x",
+						"tan=y/x  cot=x/y"
+					]
+				},
+				{
+					"name": "Trig ratios",
+					"lines": [
+						"sin=opp/hyp",
+						"cos=adj/hyp",
+						"tan=opp/adj",
+						"csc=1/sin",
+						"sec=1/cos",
+						"cot=1/tan",
+						"tan=sin/cos cot=cos/sin"
+					]
+				},
+				{
+					"name": "Pythagorean identities",
+					"lines": [
+						"sin^^2+cos^^2=1",
+						"1=cot^^2=csc^^2",
+						"tan^^2+1=sec^^2"
+					]
+				},
+				{
+					"name": "Cofunctions",
+					"lines": [
+						"sin(90^^o-theta)=cos(theta)",
+						"sec(90^^o-theta)=csc(theta)",
+						"tan(90^^o-theta)=cot(theta)"
+					]
+				},
+				{
+					"name": "Even/Odd",
+					"lines": [
+						"Even:       Odd:",
+						"cos-theta=costheta  sin-theta=-sintheta",
+						"sec-theta=sectheta  csc-theta=-csctheta",
+						"            tan-theta=-tantheta",
+						"            cot-theta=-cottheta"
+					]
+				},
+				{
+					"name": "Law of sines",
+					"lines": ["sinA/a=sinB/b=sinC/c"]
+				},
+				{
+					"name": "Law of cosines",
+					"lines": [
+						"a^^2=b^^2+c^^2-2bc*cosA",
+						"b^^2=a^^2+c^^2-2ac*cosB",
+						"c^^2=a^^2+b^^2-2ab*cosC",
+						"",
+						"cosA=(b^^2+c^^2-a^^2)/2bc",
+						"cosB=(a^^2+c^^2-b^^2)/2ac",
+						"cosC=(a^^2+b^^2-c^^2)/2ab"
+					]
+				},
+				{
+					"name": "Sum form\\ulas",
+					"lines": [
+						"sin(A+-B)=",
+						"    sinAcosB+-cosAsinB",
+						"cos(A+-B)=",
+						"    cosAcosB-+sinAsinB",
+						"tan(a+-B)=(tanA+-tanB)/",
+						"    (1-+tanAtanB)"
+					]
+				},
+				{
+					"name": "Double angle form\\ulas",
+					"lines": [
+						"sin(2A)=2sinAcosA",
+						"cos(2A)=cos^^2A-sin^^2A",
+						"       =2cos^^2A-1",
+						"       =1-2sin^^2A",
+						"tan(2A)=(2tanA)/(1-tan^^2A)"
+					]
+				}
+			]
+		}
+	]
+}
