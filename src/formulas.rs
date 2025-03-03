@@ -38,14 +38,25 @@ impl StringBuilder {
     }
 }
 
-fn build_item(item_label: Option<&str>, item: FormulaItem, gen: &mut LabelGenerator) -> String {
+fn build_item(item_label: Option<String>, item: FormulaItem, gen: &mut LabelGenerator) -> String {
     let mut builder = StringBuilder::new();
     if let Some(lbl) = item_label {
         builder.add(format!("Lbl {lbl}"));
     }
     match item {
         FormulaItem::Group { name, contents } => {
+            let mut menu = StringBuilder::new();
+            let mut body = StringBuilder::new();
+            menu.add(format!("Menu \"{name}\""));
+            for next in contents {
+                let next_lbl = gen.next();
+                menu.add(next.get_name().clone());
+                menu.add(next_lbl.clone());
 
+                body.add(build_item(Some(next_lbl), next, gen));
+            }
+            builder.add(menu.combine(","));
+            builder.add(body.combine("\n"));
         }
         FormulaItem::Text { name, lines } => {
             builder.add(format!("Disp \"{name}"));
@@ -57,18 +68,16 @@ fn build_item(item_label: Option<&str>, item: FormulaItem, gen: &mut LabelGenera
             builder.add("Stop".to_string());
         }
     }
-    return builder.combine("\n");
+    builder.combine("\n")
 }
 
-pub fn build_formulas() {
-    let mut gen = LabelGenerator(0);
-    for _ in 0..100 {
-        println!("{}", gen.next());
-    }
-    // let json = include_str!("../output.json");
-    // let data: FormulaItem = serde_json::from_str(json).unwrap();
+pub fn build_formulas() -> String {
+    let json = include_str!("../output.json");
+    let data: FormulaItem = serde_json::from_str(json).unwrap();
 
-    // println!("{:?}", data);
+    let mut gen = LabelGenerator::new();
+
+    build_item(None, data, &mut gen)
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,6 +91,15 @@ enum FormulaItem {
         name: String,
         contents: Vec<FormulaItem>,
     },
+}
+
+impl FormulaItem {
+    fn get_name(&self) -> &String {
+        match self {
+            Self::Group { name, .. } => name,
+            Self::Text { name, .. } => name,
+        }
+    }
 }
 
 // #[derive(Debug, Deserialize)]

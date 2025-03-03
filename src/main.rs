@@ -11,7 +11,8 @@ mod tokens;
 mod formulas;
 
 fn main() {
-    build_formulas();
+    let formulas = build_formulas();
+    println!("{formulas}");
     // let program = include_str!("../test.tibasic");
     // let processed = preprocess(program).unwrap();
     // println!("{processed}");
