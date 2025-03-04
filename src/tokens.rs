@@ -2,14 +2,39 @@ use serde::Deserialize;
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 #[derive(Debug, Default)]
-pub struct TokenTree {
+pub struct TokenTrie {
     token: Option<Vec<u8>>,
-    children: HashMap<char, TokenTree>,
+    children: HashMap<char, TokenTrie>,
 }
 
-impl TokenTree {
+impl TokenTrie {
+    pub fn load_tokens(token_json: JSONTokenData) -> Result<Self, Box<dyn Error>> {
+        let mut root = Self::default();
+
+        for token in token_json {
+            let root_token_id = parse_token_id(&token.0).ok_or(InvalidTokenIdStr(token.0))?;
+            match token.1 {
+                JSONTokenGroup::OneByte(tokens) => {
+                    root.add_token(tokens, vec![root_token_id])?;
+                }
+                JSONTokenGroup::TwoByte(token_list) => {
+                    for (second_token_id, tokens) in token_list {
+                        let token_id = vec![
+                            root_token_id,
+                            parse_token_id(&second_token_id)
+                                .ok_or(InvalidTokenIdStr(second_token_id))?,
+                        ];
+                        root.add_token(tokens, token_id)?;
+                    }
+                }
+            }
+        }
+
+        Ok(root)
+    }
+
     fn add(&mut self, text: String, token_id: Vec<u8>) {
-        let mut current: &mut TokenTree = self;
+        let mut current: &mut TokenTrie = self;
         for c in text.chars() {
             let new = current.children.entry(c).or_default();
             current = new;
@@ -17,24 +42,50 @@ impl TokenTree {
         current.token = Some(token_id);
     }
 
-    pub fn get<'a>(&self, string: &'a str) -> (Vec<u8>, &'a str) {
-        let mut current: &TokenTree = self;
+    fn add_token(
+        &mut self,
+        tokens: Vec<JSONToken>,
+        token_id: Vec<u8>,
+    ) -> Result<(), TokenTextError> {
+        self.add(token_text(tokens)?, token_id);
+        Ok(())
+    }
+
+    fn get<'a>(&self, string: &'a str) -> (Vec<u8>, &'a str) {
+        let mut current: &TokenTrie = self;
         let mut last_valid: Option<(&Vec<u8>, usize)> = None;
+
+        let get_last_valid = |last_valid: Option<(&Vec<u8>, usize)>| {
+            let (tok, idx) = last_valid.unwrap();
+            (tok.clone(), string.get(idx + 1..).unwrap())
+        };
 
         for (i, c) in string.char_indices() {
             if let Some(next) = current.children.get(&c) {
                 current = next;
             } else {
-                let (tok, idx) = last_valid.unwrap();
-                return (tok.clone(), string.get(idx + 1..).unwrap());
+                return get_last_valid(last_valid);
             }
             if let Some(t) = &current.token {
                 last_valid = Some((t, i));
             }
         }
-        let (tok, idx) = last_valid.unwrap();
-        (tok.clone(), string.get(idx + 1..).unwrap())
+        get_last_valid(last_valid)
     }
+
+    pub fn tokenize(&self, mut program: &str) -> Vec<u8> {
+        let mut bytes = vec![];
+        while !program.is_empty() {
+            let (mut tokens, left) = self.get(program);
+            bytes.append(&mut tokens);
+            program = left;
+        }
+        bytes
+    }
+}
+
+pub fn load_token_json() -> Result<JSONTokenData, Box<dyn Error>> {
+    Ok(serde_json::from_str(include_str!("../tokens/8X.json"))?)
 }
 
 #[derive(Debug, Clone)]
@@ -75,7 +126,7 @@ impl Display for TokenTextError {
 // finds the typeable text of a token. Because these were different across
 // different versions of TI, there could be multiple entries for the same token.
 // We just take the latest one.
-fn token_text(tokens: Vec<Token>) -> Result<String, TokenTextError> {
+fn token_text(tokens: Vec<JSONToken>) -> Result<String, TokenTextError> {
     Ok(tokens
         .last()
         .ok_or(TokenTextError::NoLanguages)?
@@ -86,64 +137,15 @@ fn token_text(tokens: Vec<Token>) -> Result<String, TokenTextError> {
         .clone())
 }
 
-fn add_token(tokens: Vec<Token>, token_id: Vec<u8>, root: &mut TokenTree) -> Result<(), TokenTextError> {
-    root.add(token_text(tokens)?, token_id);
-    Ok(())
-}
-
-pub fn load_tokens() -> Result<TokenTree, Box<dyn Error>> {
-    let mut root = TokenTree::default();
-
-    let tokens = read_json()?;
-
-    for token in tokens {
-        let root_token_id = parse_token_id(&token.0).ok_or(InvalidTokenIdStr(token.0))?;
-        match token.1 {
-            TokenGroup::OneByte(tokens) => {
-                add_token(tokens, vec![root_token_id], &mut root)?;
-            }
-            TokenGroup::TwoByte(token_list) => {
-                for (second_token_id, tokens) in token_list {
-                    add_token(
-                        tokens,
-                        vec![
-                            root_token_id,
-                            parse_token_id(&second_token_id)
-                                .ok_or(InvalidTokenIdStr(second_token_id))?,
-                        ],
-                        &mut root,
-                    )?;
-                }
-            }
-        }
-    }
-
-    Ok(root)
-}
-
-pub fn tokenize(mut program: &str, tokens: &TokenTree) -> Vec<u8> {
-    let mut bytes = vec![];
-    while !program.is_empty() {
-        let (mut tokens, left) = tokens.get(program);
-        bytes.append(&mut tokens);
-        program = left;
-    }
-    bytes
-}
-
-fn read_json() -> Result<TokenData, Box<dyn Error>> {
-    Ok(serde_json::from_str(include_str!("../tokens/8X.json"))?)
-}
-
 #[derive(Deserialize)]
-struct Lifetime {
+pub struct JSONLifetime {
     // model: String,
     // #[serde(rename = "os-version")]
     // os_version: String,
 }
 
 #[derive(Deserialize)]
-struct Language {
+pub struct JSONLanguage {
     // #[serde(rename = "ti-ascii")]
     // ti_ascii: String,
     // display: String,
@@ -152,17 +154,17 @@ struct Language {
 }
 
 #[derive(Deserialize)]
-struct Token {
+pub struct JSONToken {
     // since: Lifetime,
     // until: Option<Lifetime>,
-    langs: HashMap<String, Language>,
+    langs: HashMap<String, JSONLanguage>,
 }
 
 #[derive(Deserialize)]
 #[serde(untagged)]
-enum TokenGroup {
-    OneByte(Vec<Token>),
-    TwoByte(HashMap<String, Vec<Token>>),
+pub enum JSONTokenGroup {
+    OneByte(Vec<JSONToken>),
+    TwoByte(HashMap<String, Vec<JSONToken>>),
 }
 
-type TokenData = HashMap<String, TokenGroup>;
+pub type JSONTokenData = HashMap<String, JSONTokenGroup>;

@@ -21,7 +21,7 @@ impl LabelGenerator {
 }
 
 struct StringBuilder {
-    strs: Vec<String>
+    strs: Vec<String>,
 }
 
 impl StringBuilder {
@@ -38,23 +38,59 @@ impl StringBuilder {
     }
 }
 
-fn build_item(item_label: Option<String>, item: FormulaItem, gen: &mut LabelGenerator) -> String {
+macro_rules! quote {
+    ($s:expr) => {
+        format!(r#"{}"#, $s)
+    };
+}
+
+fn build_item(
+    item_label: String,
+    parent_label: Option<String>,
+    item: FormulaItem,
+    page_number: usize,
+    gen: &mut LabelGenerator,
+) -> String {
     let mut builder = StringBuilder::new();
-    if let Some(lbl) = item_label {
-        builder.add(format!("Lbl {lbl}"));
-    }
+    builder.add(format!("Lbl {item_label}"));
     match item {
         FormulaItem::Group { name, contents } => {
             let mut menu = StringBuilder::new();
             let mut body = StringBuilder::new();
-            menu.add(format!("Menu \"{name}\""));
-            for next in contents {
+
+            let menu_name = if page_number == 1 {
+                name.clone()
+            } else {
+                format!("{name} - page {page_number}")
+            };
+
+            menu.add(format!("Menu {}", quote!(menu_name)));
+            for next in contents.iter().take(7).cloned() {
                 let next_lbl = gen.next();
-                menu.add(next.get_name().clone());
+                menu.add(format!("\"{}\"", next.get_name()));
                 menu.add(next_lbl.clone());
 
-                body.add(build_item(Some(next_lbl), next, gen));
+                body.add(build_item(next_lbl, Some(item_label.clone()), next, 1, gen));
             }
+
+            if contents.len() > 8 {
+                let rest_lbl = gen.next();
+                menu.add(quote!("next"));
+                menu.add(rest_lbl.clone());
+
+                let next_item = FormulaItem::Group {
+                    name,
+                    contents: contents[7..].to_vec(),
+                };
+
+                body.add(build_item(rest_lbl, Some(item_label), next_item, page_number+1, gen));
+            }
+
+            if let Some(par_lbl) = parent_label {
+                menu.add(quote!("back"));
+                menu.add(par_lbl.clone());
+            }
+
             builder.add(menu.combine(","));
             builder.add(body.combine("\n"));
         }
@@ -77,10 +113,12 @@ pub fn build_formulas() -> String {
 
     let mut gen = LabelGenerator::new();
 
-    build_item(None, data, &mut gen)
+    let first_lbl = gen.next();
+
+    build_item(first_lbl, None, data, 1, &mut gen)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 enum FormulaItem {
     Text {
@@ -101,15 +139,3 @@ impl FormulaItem {
         }
     }
 }
-
-// #[derive(Debug, Deserialize)]
-// struct GroupItem {
-//     name: String,
-//     contents: Vec<FormulaItem>
-// }
-
-// #[derive(Debug, Deserialize)]
-// struct TextItem {
-//     name: String,
-//     lines: Vec<String>
-// }

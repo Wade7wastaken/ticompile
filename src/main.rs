@@ -1,25 +1,23 @@
 use compile::{compile_from_bytes, CompilerOptions};
 use formulas::build_formulas;
 use preprocessor::preprocess;
-use tokens::{load_tokens, tokenize};
+use tokens::{load_token_json, TokenTrie};
 
 mod compile;
+mod formulas;
 mod header;
 mod metadata;
 mod preprocessor;
 mod tokens;
-mod formulas;
 
 fn main() {
-    let formulas = build_formulas();
-    println!("{formulas}");
-    // let program = include_str!("../test.tibasic");
-    // let processed = preprocess(program).unwrap();
-    // println!("{processed}");
+    let program = build_formulas();
+    let processed = preprocess(&program).unwrap();
+    println!("{processed}");
 
+    let token_json = load_token_json().unwrap();
+    let token_trie = TokenTrie::load_tokens(token_json).unwrap();
 
-    // let tokens = load_tokens().unwrap();
-    // let program = "Disp \"HELLO WORLD\"";
-    // let bytes = tokenize(program, &tokens);
-    // compile_from_bytes(bytes, CompilerOptions::default()).unwrap();
+    let bytes = token_trie.tokenize(&processed);
+    compile_from_bytes(bytes, CompilerOptions::default()).unwrap();
 }
