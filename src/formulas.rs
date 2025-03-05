@@ -108,7 +108,7 @@ fn build_item(
 }
 
 pub fn build_formulas() -> String {
-    let json = include_str!("../output.json");
+    let json = include_str!("../formulas.json");
     let data: FormulaItem = serde_json::from_str(json).unwrap();
 
     let mut gen = LabelGenerator::new();
