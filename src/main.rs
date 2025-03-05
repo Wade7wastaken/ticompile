@@ -1,14 +1,9 @@
-use compile::{compile_from_bytes, CompilerOptions};
-use formulas::build_formulas;
-use preprocessor::preprocess;
-use tokens::{load_token_json, TokenTrie};
-
-mod compile;
-mod formulas;
-mod header;
-mod metadata;
-mod preprocessor;
-mod tokens;
+use ticompile::{
+    compile::{compile_from_bytes, CompilerOptions},
+    formulas::build_formulas,
+    preprocessor::preprocess,
+    tokens::{load_token_json, TokenTrie},
+};
 
 fn main() {
     let program = build_formulas();
