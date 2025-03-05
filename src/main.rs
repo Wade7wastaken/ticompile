@@ -13,11 +13,14 @@ mod tokens;
 fn main() {
     let program = build_formulas();
     let processed = preprocess(&program).unwrap();
-    println!("{processed}");
+    // println!("{processed}");
 
     let token_json = load_token_json().unwrap();
     let token_trie = TokenTrie::load_tokens(token_json).unwrap();
 
-    let bytes = token_trie.tokenize(&processed);
-    compile_from_bytes(bytes, CompilerOptions::default()).unwrap();
+    let tokens = token_trie.tokenize(&processed);
+
+    println!("{}", tokens.display());
+
+    compile_from_bytes(tokens.into_bytes(), CompilerOptions::default()).unwrap();
 }

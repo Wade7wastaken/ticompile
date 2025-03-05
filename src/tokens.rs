@@ -1,66 +1,90 @@
+use itertools::Itertools;
 use serde::Deserialize;
 use std::{collections::HashMap, error::Error, fmt::Display};
 
-#[derive(Debug, Default)]
+pub fn load_token_json() -> Result<JSONTokenData, Box<dyn Error>> {
+    Ok(serde_json::from_str(include_str!("../tokens/8X.json"))?)
+}
+
+// finds the typeable text of a token. Because these were different across
+// different versions of TI, there could be multiple entries for the same token.
+// We just take the latest one.
+fn token_language(tokens: Vec<JSONToken>) -> Result<JSONLanguage, TokenTextError> {
+    Ok(tokens
+        .last()
+        .ok_or(TokenTextError::NoLanguages)?
+        .langs
+        .get("en")
+        .ok_or(TokenTextError::NoEnglish)?
+        .clone())
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct TokenTrie {
-    token: Option<Vec<u8>>,
+    token: Option<Token>,
     children: HashMap<char, TokenTrie>,
 }
 
 impl TokenTrie {
     pub fn load_tokens(token_json: JSONTokenData) -> Result<Self, Box<dyn Error>> {
-        let mut root = Self::default();
+        let mut trie = Self::default();
 
-        for token in token_json {
-            let root_token_id = parse_token_id(&token.0).ok_or(InvalidTokenIdStr(token.0))?;
-            match token.1 {
-                JSONTokenGroup::OneByte(tokens) => {
-                    root.add_token(tokens, vec![root_token_id])?;
+        for (root_token_id_str, token_group) in token_json {
+            let root_token_id = TokenId::new(root_token_id_str)?;
+
+            match token_group {
+                JSONTokenGroup::OneByte(token_data) => {
+                    trie.add_token(token_data, root_token_id)?;
                 }
                 JSONTokenGroup::TwoByte(token_list) => {
-                    for (second_token_id, tokens) in token_list {
-                        let token_id = vec![
-                            root_token_id,
-                            parse_token_id(&second_token_id)
-                                .ok_or(InvalidTokenIdStr(second_token_id))?,
-                        ];
-                        root.add_token(tokens, token_id)?;
+                    for (second_token_id_str, token_data) in token_list {
+                        let second_token_id = root_token_id.add_second(second_token_id_str)?;
+
+                        trie.add_token(token_data, second_token_id)?;
                     }
                 }
             }
         }
 
-        Ok(root)
+        Ok(trie)
     }
 
-    fn add(&mut self, text: String, token_id: Vec<u8>) {
+    fn add(&mut self, text: String, token: Token) {
         let mut current: &mut TokenTrie = self;
         for c in text.chars() {
             let new = current.children.entry(c).or_default();
             current = new;
         }
-        current.token = Some(token_id);
+        current.token = Some(token);
     }
 
     fn add_token(
         &mut self,
-        tokens: Vec<JSONToken>,
-        token_id: Vec<u8>,
+        token_data: Vec<JSONToken>,
+        token_id: TokenId,
     ) -> Result<(), TokenTextError> {
-        self.add(token_text(tokens)?, token_id);
+        let lang = token_language(token_data)?;
+        let new_token = Token::new(token_id, lang.display);
+        self.add(lang.accessible, new_token);
         Ok(())
     }
 
-    fn get<'a>(&self, string: &'a str) -> (Vec<u8>, &'a str) {
+    fn get<'a>(&self, string: &'a str) -> (Token, &'a str) {
         let mut current: &TokenTrie = self;
-        let mut last_valid: Option<(&Vec<u8>, usize)> = None;
+        let mut last_valid: Option<(&Token, usize)> = None;
 
-        let get_last_valid = |last_valid: Option<(&Vec<u8>, usize)>| {
+        let get_last_valid = |last_valid: Option<(&Token, usize)>| {
             let (tok, idx) = last_valid.unwrap();
             (tok.clone(), string.get(idx + 1..).unwrap())
         };
 
         for (i, c) in string.char_indices() {
+            if c == '\\' {
+                if let Some(l) = last_valid {
+                    return get_last_valid(Some(l));
+                }
+                continue;
+            }
             if let Some(next) = current.children.get(&c) {
                 current = next;
             } else {
@@ -73,25 +97,66 @@ impl TokenTrie {
         get_last_valid(last_valid)
     }
 
-    pub fn tokenize(&self, mut program: &str) -> Vec<u8> {
-        let mut bytes = vec![];
+    pub fn tokenize(&self, mut program: &str) -> TokenList {
+        let mut tokens = vec![];
         while !program.is_empty() {
-            let (mut tokens, left) = self.get(program);
-            bytes.append(&mut tokens);
+            let (token, left) = self.get(program);
+            tokens.push(token);
             program = left;
         }
-        bytes
+        TokenList(tokens)
     }
 }
 
-pub fn load_token_json() -> Result<JSONTokenData, Box<dyn Error>> {
-    Ok(serde_json::from_str(include_str!("../tokens/8X.json"))?)
+#[derive(Debug, Clone)]
+struct TokenId(Vec<u8>);
+
+impl TokenId {
+    fn new(s: String) -> Result<Self, InvalidTokenIdStr> {
+        Ok(TokenId(vec![Self::parse_token_id(s)?]))
+    }
+
+    fn add_second(&self, s: String) -> Result<Self, InvalidTokenIdStr> {
+        let mut cloned = self.clone();
+        cloned.0.push(Self::parse_token_id(s)?);
+        Ok(cloned)
+    }
+
+    fn parse_token_id(token_id_str: String) -> Result<u8, InvalidTokenIdStr> {
+        token_id_str
+            .strip_prefix('$')
+            .and_then(|x| u8::from_str_radix(x, 16).ok())
+            .ok_or(InvalidTokenIdStr(token_id_str))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Token {
+    id: TokenId,
+    display: String,
+}
+
+impl Token {
+    fn new(id: TokenId, display: String) -> Self {
+        Token { id, display }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TokenList(Vec<Token>);
+
+impl TokenList {
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.0.into_iter().flat_map(|x| x.id.0).collect()
+    }
+
+    pub fn display(&self) -> String {
+        self.0.iter().map(|x| &x.display).join("")
+    }
 }
 
 #[derive(Debug, Clone)]
 struct InvalidTokenIdStr(String);
-
-impl Error for InvalidTokenIdStr {}
 
 impl Display for InvalidTokenIdStr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -99,19 +164,13 @@ impl Display for InvalidTokenIdStr {
     }
 }
 
-fn parse_token_id(token_id_str: &str) -> Option<u8> {
-    token_id_str
-        .strip_prefix('$')
-        .and_then(|x| u8::from_str_radix(x, 16).ok())
-}
+impl Error for InvalidTokenIdStr {}
 
 #[derive(Debug, Clone)]
 enum TokenTextError {
     NoLanguages,
     NoEnglish,
 }
-
-impl Error for TokenTextError {}
 
 impl Display for TokenTextError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -123,19 +182,7 @@ impl Display for TokenTextError {
     }
 }
 
-// finds the typeable text of a token. Because these were different across
-// different versions of TI, there could be multiple entries for the same token.
-// We just take the latest one.
-fn token_text(tokens: Vec<JSONToken>) -> Result<String, TokenTextError> {
-    Ok(tokens
-        .last()
-        .ok_or(TokenTextError::NoLanguages)?
-        .langs
-        .get("en")
-        .ok_or(TokenTextError::NoEnglish)?
-        .accessible
-        .clone())
-}
+impl Error for TokenTextError {}
 
 #[derive(Deserialize)]
 pub struct JSONLifetime {
@@ -144,11 +191,11 @@ pub struct JSONLifetime {
     // os_version: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct JSONLanguage {
     // #[serde(rename = "ti-ascii")]
     // ti_ascii: String,
-    // display: String,
+    display: String,
     accessible: String,
     // variants: Option<Vec<String>>,
 }

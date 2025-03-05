@@ -40,7 +40,7 @@ impl StringBuilder {
 
 macro_rules! quote {
     ($s:expr) => {
-        format!(r#"{}"#, $s)
+        format!(r#""{}""#, $s)
     };
 }
 
@@ -75,7 +75,7 @@ fn build_item(
 
             if contents.len() > 8 {
                 let rest_lbl = gen.next();
-                menu.add(quote!("next"));
+                menu.add(quote!("Next"));
                 menu.add(rest_lbl.clone());
 
                 let next_item = FormulaItem::Group {
@@ -87,7 +87,7 @@ fn build_item(
             }
 
             if let Some(par_lbl) = parent_label {
-                menu.add(quote!("back"));
+                menu.add(quote!("Back"));
                 menu.add(par_lbl.clone());
             }
 
