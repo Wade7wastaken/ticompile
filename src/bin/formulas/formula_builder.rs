@@ -83,7 +83,13 @@ fn build_item(
                     contents: contents[7..].to_vec(),
                 };
 
-                body.add(build_item(rest_lbl, Some(item_label), next_item, page_number+1, gen));
+                body.add(build_item(
+                    rest_lbl,
+                    Some(item_label),
+                    next_item,
+                    page_number + 1,
+                    gen,
+                ));
             }
 
             if let Some(par_lbl) = parent_label {
@@ -108,7 +114,7 @@ fn build_item(
 }
 
 pub fn build_formulas() -> String {
-    let json = include_str!("../formulas.json");
+    let json = include_str!("./data.json");
     let data: FormulaItem = serde_json::from_str(json).unwrap();
 
     let mut gen = LabelGenerator::new();

@@ -7,9 +7,9 @@ use crate::{header::generate_header, metadata::generate_metadata};
 
 #[derive(Debug, Clone)]
 pub struct CompilerOptions<'a> {
-    file_name: &'a str,
-    comment: &'a str,
-    program_name: &'a str,
+    pub file_name: &'a str,
+    pub comment: &'a str,
+    pub program_name: &'a str,
 }
 
 impl Default for CompilerOptions<'_> {
