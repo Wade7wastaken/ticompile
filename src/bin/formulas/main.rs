@@ -9,6 +9,7 @@ mod formula_builder;
 
 fn main() {
     let program = build_formulas();
+
     let processed = preprocess(&program).unwrap();
 
     let token_json = load_token_json().unwrap();
@@ -18,5 +19,11 @@ fn main() {
 
     println!("{}", tokens.display());
 
-    compile_from_bytes(tokens.into_bytes(), CompilerOptions::default()).unwrap();
+    let options = CompilerOptions {
+        file_name: "FORMULAS.8xp",
+        program_name: "FORMULAS",
+        comment: "comment",
+    };
+
+    compile_from_bytes(tokens.into_bytes(), options).unwrap();
 }

@@ -1,9 +1,10 @@
 use itertools::Itertools;
 use serde::Deserialize;
-use std::{collections::HashMap, error::Error, fmt::Display};
+use std::{collections::HashMap, error::Error, fmt::Display, fs::File};
 
 pub fn load_token_json() -> Result<JSONTokenData, Box<dyn Error>> {
-    Ok(serde_json::from_str(include_str!("../tokens/8X.json"))?)
+    let file = File::open("tokens/8X.json")?;
+    Ok(serde_json::from_reader(file)?)
 }
 
 // finds the typeable text of a token. Because these were different across
@@ -50,12 +51,9 @@ impl TokenTrie {
     }
 
     fn add(&mut self, text: String, token: Token) {
-        let mut current: &mut TokenTrie = self;
-        for c in text.chars() {
-            let new = current.children.entry(c).or_default();
-            current = new;
-        }
-        current.token = Some(token);
+        text.chars()
+            .fold(self, |acc, c| acc.children.entry(c).or_default())
+            .token = Some(token);
     }
 
     fn add_token(
@@ -65,6 +63,9 @@ impl TokenTrie {
     ) -> Result<(), TokenTextError> {
         let lang = token_language(token_data)?;
         let new_token = Token::new(token_id, lang.display);
+        for variant in lang.variants.into_iter().flatten() {
+            self.add(variant, new_token.clone());
+        }
         self.add(lang.accessible, new_token);
         Ok(())
     }
@@ -75,7 +76,13 @@ impl TokenTrie {
 
         let get_last_valid = |last_valid: Option<(&Token, usize)>| {
             let (tok, idx) = last_valid.unwrap();
-            (tok.clone(), string.get(idx + 1..).unwrap())
+            let next_char_index = string[idx..]
+                .char_indices()
+                .nth(1)
+                .map(|(i, _)| idx + i)
+                .unwrap_or(string.len()); // if there's no next char, return empty string
+
+            (tok.clone(), string.get(next_char_index..).unwrap())
         };
 
         for (i, c) in string.char_indices() {
@@ -197,7 +204,7 @@ pub struct JSONLanguage {
     // ti_ascii: String,
     display: String,
     accessible: String,
-    // variants: Option<Vec<String>>,
+    variants: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]

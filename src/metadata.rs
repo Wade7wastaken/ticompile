@@ -19,7 +19,7 @@ pub fn generate_metadata(body_len: u16, program_name: &str) -> Vec<u8> {
 }
 
 fn process_program_name(name: &str) -> [u8; 8] {
-    let name = if name.len() >= 8 {
+    let name = if name.len() > 8 {
         let new_name = &name[..8];
         eprintln!(
             "Truncating program name to 8 characters: \"{}\" -> \"{}\"",

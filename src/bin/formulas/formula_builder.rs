@@ -44,6 +44,61 @@ macro_rules! quote {
     };
 }
 
+fn build_group(
+    item_label: String,
+    parent_label: Option<String>,
+    name: String,
+    contents: Vec<FormulaItem>,
+    page_number: usize,
+    gen: &mut LabelGenerator,
+    builder: &mut StringBuilder,
+) {
+    let mut menu = StringBuilder::new();
+    let mut body = StringBuilder::new();
+
+    let menu_name = if page_number == 1 {
+        &name
+    } else {
+        &format!("{name} - page {page_number}")
+    };
+
+    menu.add(format!("Menu({}", quote!(menu_name)));
+    for next in contents.iter().take(7).cloned() {
+        let next_lbl = gen.next();
+        menu.add(quote!(next.get_name()).to_string());
+        menu.add(next_lbl.clone());
+
+        body.add(build_item(next_lbl, Some(item_label.clone()), next, 1, gen));
+    }
+
+    if contents.len() > 8 {
+        let rest_lbl = gen.next();
+        menu.add(quote!("Next"));
+        menu.add(rest_lbl.clone());
+
+        let next_item = FormulaItem::Group {
+            name,
+            contents: contents[7..].to_vec(),
+        };
+
+        body.add(build_item(
+            rest_lbl,
+            Some(item_label),
+            next_item,
+            page_number + 1,
+            gen,
+        ));
+    }
+
+    if let Some(par_lbl) = parent_label {
+        menu.add(quote!("Back"));
+        menu.add(par_lbl.clone());
+    }
+
+    builder.add(menu.combine(","));
+    builder.add(body.combine("\n"));
+}
+
 fn build_item(
     item_label: String,
     parent_label: Option<String>,
@@ -55,50 +110,15 @@ fn build_item(
     builder.add(format!("Lbl {item_label}"));
     match item {
         FormulaItem::Group { name, contents } => {
-            let mut menu = StringBuilder::new();
-            let mut body = StringBuilder::new();
-
-            let menu_name = if page_number == 1 {
-                name.clone()
-            } else {
-                format!("{name} - page {page_number}")
-            };
-
-            menu.add(format!("Menu {}", quote!(menu_name)));
-            for next in contents.iter().take(7).cloned() {
-                let next_lbl = gen.next();
-                menu.add(format!("\"{}\"", next.get_name()));
-                menu.add(next_lbl.clone());
-
-                body.add(build_item(next_lbl, Some(item_label.clone()), next, 1, gen));
-            }
-
-            if contents.len() > 8 {
-                let rest_lbl = gen.next();
-                menu.add(quote!("Next"));
-                menu.add(rest_lbl.clone());
-
-                let next_item = FormulaItem::Group {
-                    name,
-                    contents: contents[7..].to_vec(),
-                };
-
-                body.add(build_item(
-                    rest_lbl,
-                    Some(item_label),
-                    next_item,
-                    page_number + 1,
-                    gen,
-                ));
-            }
-
-            if let Some(par_lbl) = parent_label {
-                menu.add(quote!("Back"));
-                menu.add(par_lbl.clone());
-            }
-
-            builder.add(menu.combine(","));
-            builder.add(body.combine("\n"));
+            build_group(
+                item_label,
+                parent_label,
+                name,
+                contents,
+                page_number,
+                gen,
+                &mut builder,
+            );
         }
         FormulaItem::Text { name, lines } => {
             builder.add(format!("Disp \"{name}"));

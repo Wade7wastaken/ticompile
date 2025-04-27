@@ -35,47 +35,37 @@
 					"name": "Sequences",
 					"contents": [
 						{
-							"name": "Arithmetic",
-							"contents": [
-								{
-									"name": "Definition",
-									"lines": [
-										"Sequence of numbers that",
-										"starts at a1 and increases",
-										"by d every iteration"
-									]
-								},
-								{
-									"name": "General term",
-									"lines": ["1st term n=1", "Sn=S1+(n-1)d"]
-								},
-								{
-									"name": "Finite sum",
-									"lines": [
-										"a1: 1st term",
-										"an: last term",
-										"n: # terms",
-										"(n/2)(a1+an)"
-									]
-								}
+							"name": "Arith Def",
+							"lines": [
+								"Sequence of numbers that",
+								"starts at a1 and increases",
+								"by d every iteration"
 							]
 						},
 						{
-							"name": "Geometric",
-							"contents": [
-								{
-									"name": "General term",
-									"lines": ["Sn=S1r^(n-1)"]
-								},
-								{
-									"name": "Finite sum",
-									"lines": ["Sn=S1(1-r^n)/(1-r)"]
-								},
-								{
-									"name": "Infinite sum",
-									"lines": ["Sinf=S1/(1-r)"]
-								}
+							"name": "Arith General term",
+							"lines": ["1st term n=1", "Sn=S1+(n-1)d"]
+						},
+						{
+							"name": "Arith Finite sum",
+							"lines": [
+								"a1: 1st term",
+								"an: last term",
+								"n: # terms",
+								"(n/2)(a1+an)"
 							]
+						},
+						{
+							"name": "Geomet General term",
+							"lines": ["Sn=S1r^(n-1)"]
+						},
+						{
+							"name": "Geomet Finite sum",
+							"lines": ["Sn=S1(1-r^n)/(1-r)"]
+						},
+						{
+							"name": "Geomet Infinite sum",
+							"lines": ["Sinf=S1/(1-r)"]
 						}
 					]
 				}
@@ -134,6 +124,10 @@
 							"lines": ["H=asqrt(3)/2"]
 						}
 					]
+				},
+				{
+					"name": "Num Diags",
+					"lines": ["n(n-3)/2"]
 				}
 			]
 		},
