@@ -2,10 +2,7 @@ use serde::Deserialize;
 
 struct LabelGenerator(usize);
 
-const LBL_ORDER: [char; 36] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-];
+const LBL_ORDER: [u8; 36] = *b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 impl LabelGenerator {
     fn new() -> Self {
@@ -13,28 +10,26 @@ impl LabelGenerator {
     }
     fn next(&mut self) -> String {
         let mut output = String::new();
-        output.push(LBL_ORDER[self.0 / LBL_ORDER.len()]);
-        output.push(LBL_ORDER[self.0 % LBL_ORDER.len()]);
+        output.push(LBL_ORDER[self.0 / LBL_ORDER.len()].into());
+        output.push(LBL_ORDER[self.0 % LBL_ORDER.len()].into());
         self.0 += 1;
         output
     }
 }
 
-struct StringBuilder {
-    strs: Vec<String>,
-}
+struct StringBuilder(Vec<String>);
 
 impl StringBuilder {
     fn new() -> Self {
-        StringBuilder { strs: vec![] }
+        StringBuilder(vec![])
     }
 
     fn add(&mut self, s: String) {
-        self.strs.push(s);
+        self.0.push(s);
     }
 
     fn combine(self, s: &str) -> String {
-        self.strs.join(s)
+        self.0.join(s)
     }
 }
 
@@ -67,7 +62,7 @@ fn build_item(
             menu.add(format!("Menu {}", quote!(menu_name)));
             for next in contents.iter().take(7).cloned() {
                 let next_lbl = gen.next();
-                menu.add(format!("\"{}\"", next.get_name()));
+                menu.add(quote!(next.get_name()));
                 menu.add(next_lbl.clone());
 
                 body.add(build_item(next_lbl, Some(item_label.clone()), next, 1, gen));

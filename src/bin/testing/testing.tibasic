@@ -1,1 +1,7 @@
-Disp "HELLO,WORLD
+
+
+
+#define message "HELLO,WORLD
+#define message something else
+
+Disp message
