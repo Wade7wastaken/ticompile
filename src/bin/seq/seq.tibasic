@@ -1,0 +1,18 @@
+Input "MAX DEPTH=",N
+N->dim(L6
+For(I,1,N
+Input "A"+toString(I)+"=",Z
+Z->L6(I)
+End
+Disp "USE QUOTES, L6"
+Input "EQ=",{Y1}
+Input "N=",A
+For(I,1,A-N
+{Y1}->B
+For(J,2,N
+L6(J)->L6(J-1)
+End
+B->L6(N)
+Disp L6
+End
+Disp L6(N)

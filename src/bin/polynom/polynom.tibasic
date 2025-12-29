@@ -1,0 +1,189 @@
+// Naming Scheme:
+// Section comments should be in CAPS
+// Global Constants should be in CAPS
+// Variables and function definitions should be in camelCase
+// Label definitions should be in PascalCase
+
+// GLOBAL CONSTANTS
+#define SUBPROGRAM 8311
+
+// GLOBAL VARIABLE DEFINITIONS
+#define tempVar Z
+#define recurseVar R
+#define polyAName PA
+#define polyBName PB
+#define polyCName PC
+#define polyA ʟPA
+#define polyB ʟPB
+#define polyC ʟPC
+
+
+// LABEL DEFINITIONS
+#define ProgramExit 0
+#define Page2 C
+// Load menu labels
+#define LoadMenu 1
+#define InputMenu 2
+#define InputList 3
+// Action menu labels
+#define ActionMenu 4
+#define ActionDisplay 5
+#define ActionAdd 6
+#define ActionSubtract 7
+#define ActionScale 8
+#define ActionMultiply 9
+#define ActionPower A
+#define ActionStore B
+
+// "FUNCTION" DEFINITIONS
+#define functionInput 1
+#define functionDisplay 2
+#define functionNormalize 3
+#define functionMultiply 4
+// must be the name of the program
+#define callFunction prgmPOLYNOM
+
+// SUBPROGRAMS
+If SUBPROGRAM=iPart(recurseVar:Then
+  // goes into ans
+  10fPart(recurseVar
+  // deleting it here shouldn't afect Ans
+  DelVar recurseVar
+  // Takes input from the user and stores it in polyB
+  If Ans=functionInput:Then
+#define highestExponent N
+    Input "HIGHEST EXPONENT: ",highestExponent
+    // Init poly list
+    highestExponent+1→dim(polyB
+    For(I,highestExponent,0,⁻1
+      Input "X^"+toString(I)+" TERM: ",tempVar
+      tempVar→polyB(I+1
+    End
+    ClrHome
+    Return
+#undef highestExponent
+  End
+  // Displays polyA
+  If Ans=functionDisplay:Then
+    Disp "PRESS ENTER TO CONTINUE
+    Disp "START WITH X^"
+    Disp dim(polyA)-1
+    Pause seq(polyA(X),X,dim(polyA),1,⁻1
+    ClrHome
+    Return
+  End
+  // Sets the lengths to the max
+  If Ans=functionNormalize:Then
+    If dim(polyA)≥dim(polyB:Then
+      dim(polyA)→dim(polyB
+    Else
+      dim(polyB)→dim(polyA
+    End
+    Return
+  End
+  // Multiplies polyA*polyB and puts the result into polyA. Modifies polyC
+  If Ans=functionMultiply:Then
+    // https://www.geeksforgeeks.org/multiply-two-polynomials-2
+    0→dim(polyC
+    dim(polyA)+dim(polyB)-1→dim(polyC
+    For(I,1,dim(polyA
+      For(J,1,dim(polyB
+        polyC(I+J-1)+polyA(I)*polyB(J→polyC(I+J-1
+      End
+    End
+    polyC→polyA
+    Return
+  End
+End
+
+// SETUP
+SetUpEditor polyAName,polyBName,polyCName
+0→dim(polyA
+0→dim(polyB
+0→dim(polyC
+ClrHome
+
+// LOAD MENU
+Lbl LoadMenu
+  // Loads a polynomial from the user and puts it in polyB
+  Menu("LOAD A POLYNOMIAL","INPUT",InputMenu,"LIST",InputList,"EXIT",ProgramExit
+
+// BODY
+Lbl InputMenu
+  SUBPROGRAM.functionInput→recurseVar
+  callFunction
+  polyB->polyA
+  Goto ActionMenu
+
+Lbl InputList
+  Input "WHAT LIST? ",polyB
+  If dim(polyB)=0:Then
+    Disp "INVALID POLYNOMIAL
+    Pause 
+    ClrHome
+    Goto InputMenu
+  End
+  polyB->polyA
+
+//ACTION MENU
+Lbl ActionMenu
+  Menu("CHOOSE AN ACTION","DISPLAY",ActionDisplay,"ADD",ActionAdd,"SUBTRACT",ActionSubtract,"SCALE",ActionScale,"MULTIPLY",ActionMultiply,"POWER",ActionPower,"LOAD NEW",LoadMenu,"NEXT",Page2,"EXIT",ProgramExit
+
+Lbl ActionDisplay
+  SUBPROGRAM.functionDisplay→recurseVar
+  callFunction
+  Goto ActionMenu
+
+Lbl ActionAdd
+  SUBPROGRAM.functionInput→recurseVar
+  callFunction
+  SUBPROGRAM.functionNormalize→recurseVar
+  callFunction
+  polyA+polyB→polyA
+  Goto ActionMenu
+
+Lbl ActionSubtract
+  SUBPROGRAM.functionInput→recurseVar
+  callFunction
+  SUBPROGRAM.functionNormalize→recurseVar
+  callFunction
+  polyA-polyB→polyA
+  Goto ActionMenu
+
+Lbl ActionScale
+  Input "SCALE FACTOR: ",tempVar
+  ClrHome
+  tempVar*polyA→polyA
+  Goto ActionMenu
+
+Lbl ActionMultiply
+  SUBPROGRAM.functionInput→recurseVar
+  callFunction
+  SUBPROGRAM.functionMultiply→recurseVar
+  callFunction
+  Goto ActionMenu
+
+Lbl ActionPower
+  Input "WHAT POWER? ",tempVar
+  If tempVar<2
+  Goto ActionPower
+  polyA->polyB
+  For(K,2,tempVar
+    SUBPROGRAM.functionMultiply→recurseVar
+    callFunction
+  End
+  Goto ActionMenu
+
+Lbl ActionStore
+  // https://www.cemetech.net/forum/viewtopic.php?t=8618
+  seq(polyA(X),X,dim(polyA),1,⁻1→L₆
+  Disp "STORED IN L₆
+  Pause "Press enter to continue
+  Goto ActionMenu
+  Lbl Page2
+  Menu("PAGE 2","BACK",ActionMenu,"STORE",ActionStore
+
+// TAKE-DOWN
+// re-run setupeditor to set it back to default
+Lbl ProgramExit
+  SetUpEditor 

@@ -14,7 +14,7 @@ pub fn generate_header(body_len: u16, comment: &str) -> Vec<u8> {
 }
 
 fn process_comment(comment: &str) -> [u8; 42] {
-    let comment = if comment.len() >= 42 {
+    let comment = if comment.len() > 42 {
         let new_comment = &comment[..42];
         eprintln!(
             "Truncating comment to 42 characters: \"{}\" -> \"{}\"",
